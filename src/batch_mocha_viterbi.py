@@ -1,7 +1,7 @@
 import numpy as np
 import functools
 import sys 
-import cPickle
+import pickle
 import htkmfc
 from multiprocessing import Pool, cpu_count
 import os
@@ -44,13 +44,13 @@ def compute_likelihoods_dbn(dbn, mat, normalize=True, unit=False):
     # propagating through the deep belief net
     batch_size = mat.shape[0] / N_BATCHES_DATASET
     out_ret = np.ndarray((mat.shape[0], dbn.logLayer.b.shape[0].eval()), dtype="float32")
-    for ind in xrange(0, mat.shape[0]+1, batch_size):
+    for ind in range(0, mat.shape[0]+1, batch_size):
         output = shared(mat[ind:ind+batch_size])
         [pre, out_mfcc] = dbn.rbm_layers[0].propup(output[:, :dbn.rbm_layers[0].n_visible])
         [pre, out_arti] = dbn.rbm_layers[1].propup(output[:, dbn.rbm_layers[0].n_visible:])
         [pre, output] = dbn.rbm_layers[2].propup(T.concatenate([out_mfcc, out_arti], axis=1))
         #[pre, output] = dbn.rbm_layers[2].propup(T.concatenate([out_mfcc, np.zeros(out_arti.eval().shape, dtype='float32')], axis=1)) # zeroing out the articulatory features, just to try, that's not comparable to training MFCC onle
-        for layer_ind in xrange(3, dbn.n_layers):
+        for layer_ind in range(3, dbn.n_layers):
             [pre, output] = dbn.rbm_layers[layer_ind].propup(output)
         ret = T.nnet.softmax(T.dot(output, dbn.logLayer.W) + dbn.logLayer.b)
         out_ret[ind:ind+batch_size] = T.log(ret).eval()
@@ -73,9 +73,9 @@ def process(ofname, iscpfname, ihmmfname,
     dbn_to_int_to_state_tuple = None
     if idbnfname != None:
         with open(idbnfname) as idbnf:
-            dbn = cPickle.load(idbnf)
+            dbn = pickle.load(idbnf)
         with open(idbndictstuple) as idbndtf:
-            dbn_to_int_to_state_tuple = cPickle.load(idbndtf)
+            dbn_to_int_to_state_tuple = pickle.load(idbndtf)
         dbn_phones_to_states = dbn_to_int_to_state_tuple[0]
         likelihoods_computer = functools.partial(compute_likelihoods_dbn, dbn)
         # like that = for GRBM first layer (normalize=True, unit=False)
@@ -107,19 +107,19 @@ def process(ofname, iscpfname, ihmmfname,
     
     if dbn != None:
         input_n_frames_mfcc = dbn.rbm_layers[0].n_visible / 39 # TODO generalize
-        print "this is a DBN with", input_n_frames_mfcc, "MFCC frames"
+        print("this is a DBN with", input_n_frames_mfcc, "MFCC frames")
         input_n_frames_arti = dbn.rbm_layers[1].n_visible / 59 # 60 # TODO generalize
-        print "this is a DBN with", input_n_frames_arti, "articulatory frames"
+        print("this is a DBN with", input_n_frames_arti, "articulatory frames")
         input_file_name = 'tmp_input_mocha.npy'
         map_input_file_name = 'tmp_map_file_to_start_end_mocha.pickle'
         try: # TODO remove?
-            print "loading concat MFCC from pickled file"
+            print("loading concat MFCC from pickled file")
             with open(input_file_name) as concat:
                 all_input = np.load(concat)
             with open(map_input_file_name) as map_input:
-                map_file_to_start_end = cPickle.load(map_input)
+                map_file_to_start_end = pickle.load(map_input)
         except:
-            print "concatenating MFCC and articulatory files" # TODO parallelize + use np.concatenate
+            print("concatenating MFCC and articulatory files") # TODO parallelize + use np.concatenate
             all_input = np.ndarray((0, dbn.rbm_layers[0].n_visible + dbn.rbm_layers[1].n_visible), dtype='float32')
             map_file_to_start_end = {}
             with open(iscpfname) as iscpf:
@@ -146,27 +146,27 @@ def process(ofname, iscpfname, ihmmfname,
             with open(input_file_name, 'w') as concat:
                 np.save(concat, all_input)
             with open(map_input_file_name, 'w') as map_input:
-                cPickle.dump(map_file_to_start_end, map_input)
+                pickle.dump(map_file_to_start_end, map_input)
     else: # GMM
         all_mfcc = np.ndarray((0, 39), dtype='float32') # TODO generalize
 
-    print "computing likelihoods"
+    print("computing likelihoods")
     if dbn != None: # TODO clean
         tmp_likelihoods = likelihoods_computer(all_input)
         #mean_dbns = np.mean(tmp_likelihoods, 0)
         #tmp_likelihoods *= (mean_gmms / mean_dbns)
-        print tmp_likelihoods
-        print tmp_likelihoods.shape
-        columns_remapping = [dbn_phones_to_states[map_states_to_phones[i]] for i in xrange(tmp_likelihoods.shape[1])]
-        print columns_remapping
+        print(tmp_likelihoods)
+        print(tmp_likelihoods.shape)
+        columns_remapping = [dbn_phones_to_states[map_states_to_phones[i]] for i in range(tmp_likelihoods.shape[1])]
+        print(columns_remapping)
         likelihoods = (tmp_likelihoods[:, columns_remapping],
             map_file_to_start_end)
-        print likelihoods[0]
-        print likelihoods[0].shape
+        print(likelihoods[0])
+        print(likelihoods[0].shape)
     else:
         likelihoods = (likelihoods_computer(all_mfcc), map_file_to_start_end)
 
-    print "computing viterbi paths"
+    print("computing viterbi paths")
     list_mlf_string = []
     with open(iscpfname) as iscpf:
         il = InnerLoop(likelihoods,
@@ -185,10 +185,10 @@ def process(ofname, iscpfname, ihmmfname,
 if __name__ == "__main__":
     if len(sys.argv) > 3:
         if '--help' in sys.argv:
-            print usage
+            print(usage)
             sys.exit(0)
         args = dict(enumerate(sys.argv))
-        options = filter(lambda (ind, x): '--' in x[0:2], enumerate(sys.argv))
+        options = [ind_x for ind_x in enumerate(sys.argv) if '--' in ind_x[1][0:2]]
         input_unibi_fname = None # my bigram LM
         input_lm_fname = None # HStats bigram LMs (either matrix of ARPA-MIT)
         input_wdnet_fname = None # HTK's wdnet (with bigram probas)
@@ -208,41 +208,41 @@ if __name__ == "__main__":
                 if option == '--ub':
                     input_unibi_fname = args[ind+1]
                     args.pop(ind+1)
-                    print "initialize the transitions between phones with the discounted bigram lm", input_unibi_fname 
+                    print("initialize the transitions between phones with the discounted bigram lm", input_unibi_fname) 
                 if option == '--b':
                     input_lm_fname = args[ind+1]
                     args.pop(ind+1)
-                    print "initialize the transitions between phones with the bigram lm", input_lm_fname
+                    print("initialize the transitions between phones with the bigram lm", input_lm_fname)
                 if option == '--w':
                     input_wdnet_fname = args[ind+1]
                     args.pop(ind+1)
-                    print "initialize the transitions between phones with the wordnet", input_wdnet_fname
-                    print "WILL IGNORE LANGUAGE MODELS!"
+                    print("initialize the transitions between phones with the wordnet", input_wdnet_fname)
+                    print("WILL IGNORE LANGUAGE MODELS!")
                 if option == '--d':
                     if not (ind+2) in args:
-                        print >> sys.stderr, "We need the DBN and the states/phones mapping"
-                        print >> sys.stderr, usage
+                        print("We need the DBN and the states/phones mapping", file=sys.stderr)
+                        print(usage, file=sys.stderr)
                         sys.exit(-1)
                     try:
                         from DBN_Gaussian_timit import DBN # not Gaussian if no GRBM
                     except:
-                        print >> sys.stderr, "experimental: TO BE LAUNCHED FROM THE 'DBN/' DIR"
+                        print("experimental: TO BE LAUNCHED FROM THE 'DBN/' DIR", file=sys.stderr)
                         sys.exit(-1)
                     dbn_fname = args[ind+1]
                     args.pop(ind+1)
-                    print "will use the following DBN to estimate states likelihoods", dbn_fname
+                    print("will use the following DBN to estimate states likelihoods", dbn_fname)
                     dbn_dicts_fname = args[ind+2]
                     args.pop(ind+2)
-                    print "and the following to_int / to_state dicts tuple", dbn_dicts_fname
+                    print("and the following to_int / to_state dicts tuple", dbn_dicts_fname)
         else:
-            print "initialize the transitions between phones uniformly"
-        output_fname = args.values()[1]
-        input_scp_fname = args.values()[2]
-        input_hmm_fname = args.values()[3]
+            print("initialize the transitions between phones uniformly")
+        output_fname = list(args.values())[1]
+        input_scp_fname = list(args.values())[2]
+        input_hmm_fname = list(args.values())[3]
         process(output_fname, input_scp_fname, 
                 input_hmm_fname, input_lm_fname, 
                 input_wdnet_fname, input_unibi_fname,
                 dbn_fname, dbn_dicts_fname)
     else:
-        print usage
+        print(usage)
         sys.exit(-1)

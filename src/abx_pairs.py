@@ -63,14 +63,14 @@ def find_triphones(mlf, foldings={}, triphones_mode=True):
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print __doc__
-    print >> sys.stderr, "working on the MLF:", sys.argv[1]
-    print >> sys.stderr, "!!! works only if the fbanks feature files exist!"
+        print(__doc__)
+    print("working on the MLF:", sys.argv[1], file=sys.stderr)
+    print("!!! works only if the fbanks feature files exist!", file=sys.stderr)
     foldings = {}
     if len(sys.argv) > 2:
         with open(sys.argv[2]) as f:
             foldings = json.load(f)
     l = find_triphones(sys.argv[1], foldings, False)
-    print >> sys.stderr, "filename onset offset phone context(left-right) talker"
-    print "#file onset offset #phone context talker"
-    print "\n".join(map(lambda x: " ".join(x), l))
+    print("filename onset offset phone context(left-right) talker", file=sys.stderr)
+    print("#file onset offset #phone context talker")
+    print("\n".join([" ".join(x) for x in l]))

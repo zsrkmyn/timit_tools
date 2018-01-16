@@ -50,7 +50,7 @@ def gtmSetParameters(loFreq, method = 'moore'):
         minBW = 15.719
         order = 1
     else:
-        print 'Invalid "method" - unp.sing "moore"'
+        print('Invalid "method" - unp.sing "moore"')
         EarQ = 9.26449
         minBW = 24.7
         order = 1
@@ -191,7 +191,7 @@ def main():
     ''' Test function, with a click-train as input. '''
     
     if dbFlag > 0:
-        print 'Let''s start!'
+        print('Let''s start!')
         (forward,feedback,fc,ERB,B) = GammaToneMake(44100, 21,400, 5000,'moore')    
         
     sr = 16e3   # sampling rate
@@ -220,7 +220,7 @@ def main():
     mpl.close()
     
     if dbFlag > 0:
-        print 'Done!'
+        print('Done!')
 
 # ----------------------------------------------------------------------------    
 

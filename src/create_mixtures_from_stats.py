@@ -10,7 +10,7 @@ with open(sys.argv[1]) as f:
         if len(line.split()) < 6:
             continue
         (id_phn, phn, nb), nb_frames = line.split()[:3], line.split()[3:]
-        nb_frames_min = min(map(float, nb_frames))
+        nb_frames_min = min(list(map(float, nb_frames)))
         nb_mixtures = max(1, int(nb_frames_min / 100))
         # at least 100 frames per mixture comp.
         phn = phn.strip('"')
@@ -18,7 +18,7 @@ with open(sys.argv[1]) as f:
 
 for i, ind in enumerate(progression):
     with open(working_folder + "/TRMU" + str(ind) + ".hed", 'w') as f:
-        for phn, mmix in max_mix.iteritems():
+        for phn, mmix in max_mix.items():
             n = mmix
             if mmix >= ind:
                 n = ind

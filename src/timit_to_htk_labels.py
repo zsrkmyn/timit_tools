@@ -15,12 +15,12 @@ def convert(folder):
                 fw.write(s_ns + ' ' + e_ns + ' ' + p + '\n')
             fr.close()
             fw.close()
-            print "Converted", fullfname
+            print("Converted", fullfname)
 
 
 if __name__ == '__main__':
     folder = '.'
     if len(sys.argv) > 1:
         folder = sys.argv[1]
-    print "Converting the *.phn (in frames) in *.lab (in nanosecs) in", folder
+    print("Converting the *.phn (in frames) in *.lab (in nanosecs) in", folder)
     convert(folder)

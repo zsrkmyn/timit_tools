@@ -63,14 +63,14 @@ def extract(folder):
                 x.append(pad(tmp_mfc[start:end].flatten()))
                 y.append(phone)
             phonef.close()
-            print "Dealt with:", fname
+            print("Dealt with:", fname)
 
     xx = np.array(x, 'float32')
     yy = np.array(y)
-    print "length x:", len(x), " length y:", len(y)
-    print "shape xx:", xx.shape, "shape yy:", yy.shape 
-    print xx
-    print yy
+    print("length x:", len(x), " length y:", len(y))
+    print("shape xx:", xx.shape, "shape yy:", yy.shape) 
+    print(xx)
+    print(yy)
 
     np.save(name+'_xdata', xx)
     np.save(name+'_ylabels', yy)
@@ -79,18 +79,18 @@ def extract(folder):
         tx = np.load(name+'_xdata.npy')
         ty = np.load(name+'_ylabels.npy')
         if np.all(tx==xx) and np.all(ty==yy):
-            print "SUCCESS: serialized and current in-memory arrays are equal"
+            print("SUCCESS: serialized and current in-memory arrays are equal")
         else:
-            print "ERROR: serialized and current in-memory arrays differ!"
+            print("ERROR: serialized and current in-memory arrays differ!")
 
 
 if __name__ == '__main__':
     folder = '.'
     if len(sys.argv) > 1:
         if sys.argv[1] == '-h':
-            print usage
+            print(usage)
             sys.exit(0)
         folder = sys.argv[1]
-    print "Producing a (x, y) dataset file for folder:", folder
-    print "WARNING: only the first 39 MFCC coefficients will be taken into account"
+    print("Producing a (x, y) dataset file for folder:", folder)
+    print("WARNING: only the first 39 MFCC coefficients will be taken into account")
     extract(folder)

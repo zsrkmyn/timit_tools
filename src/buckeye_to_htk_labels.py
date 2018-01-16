@@ -27,12 +27,12 @@ def convert(folder):
                     start = float(e)
             fr.close()
             fw.close()
-            print "Converted", fullfname
+            print("Converted", fullfname)
 
 
 if __name__ == '__main__':
     folder = '.'
     if len(sys.argv) > 1:
         folder = sys.argv[1]
-    print "Converting the *.phones (in seconds) in *.lab (in nanosecs) in", folder
+    print("Converting the *.phones (in seconds) in *.lab (in nanosecs) in", folder)
     convert(folder) 

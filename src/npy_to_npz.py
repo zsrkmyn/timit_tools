@@ -9,7 +9,7 @@ FEATURES_RATE = 1. / FRAMES_PER_SEC
 
 t = np.load(sys.argv[1])
 tt = np.zeros(t.shape[0])
-for i in xrange(tt.shape[0]):
+for i in range(tt.shape[0]):
     tt[i] = float(i)/FRAMES_PER_SEC + FEATURES_RATE / 2
 np.savez(sys.argv[1].split('.')[0] + '.npz',
         features=t,

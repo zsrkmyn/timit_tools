@@ -10,12 +10,12 @@ from subprocess import call
 try:
     from numpy import save as npsave
 except ImportError:
-    print >> sys.stderr, "ERROR: You don't have numpy"
+    print("ERROR: You don't have numpy", file=sys.stderr)
     sys.exit(-1)
 try:
     import scipy  # just to test
 except ImportError:
-    print >> sys.stderr, "ERROR: You don't have scipy"
+    print("ERROR: You don't have scipy", file=sys.stderr)
     sys.exit(-1)
 from scipy.io import wavfile
 
@@ -70,21 +70,21 @@ def process(folder,
             mfc_extension = '.mfc'
     if forcemfcext:
         mfc_extension = '.mfc'
-    print "MFC extension:", mfc_extension
+    print("MFC extension:", mfc_extension)
     if gammatones:
         try:
             from brian import Hz, kHz
             from brian.hears import loadsound, erbspace, Gammatone
         except ImportError:
-            print >> sys.stderr, "You need Brian Hears"
-            print >> sys.stderr, "http://www.briansimulator.org/docs/\
-                    hears.html"
+            print("You need Brian Hears", file=sys.stderr)
+            print("http://www.briansimulator.org/docs/\
+                    hears.html", file=sys.stderr)
             sys.exit(-1)
     if spectrograms:
         try:
             from pylab import specgram
         except ImportError:
-            print >> sys.stderr, "You need Pylab"
+            print("You need Pylab", file=sys.stderr)
             sys.exit(-1)
     fbanks = None
     if filterbanks:
@@ -92,8 +92,8 @@ def process(folder,
             sys.path.append('../spectral')
             from spectral import Spectral
         except ImportError:
-            print >> sys.stderr, "You need spectral (in the parent folder)"
-            print >> sys.stderr, "https://github.com/mwv/spectral"
+            print("You need spectral (in the parent folder)", file=sys.stderr)
+            print("https://github.com/mwv/spectral", file=sys.stderr)
             sys.exit(-1)
 
     # run through all the folders and files in the path "folder"
@@ -125,41 +125,42 @@ def process(folder,
                 tmp_snd = loadsound(wavfname)
                 gamma_cf = erbspace(20*Hz, 20*kHz, N_GAMMATONES_FILTERS)
                 gamma_fb = Gammatone(tmp_snd, gamma_cf)
-                with open(gammatonefname, 'w') as o_f:
+                with open(gammatonefname, 'wb') as o_f:
                     npsave(o_f, gamma_fb.process())
             if spectrograms:
                 powerspec, _, _, _ = specgram(sound, NFFT=int(srate
                     * SPECGRAM_WINDOW), Fs=srate, noverlap=int(srate
                         * SPECGRAM_OVERLAP)) # TODO
                 specgramfname = bdir+'/'+fname[:-4]+'_specgram.npy'
-                with open(specgramfname, 'w') as o_f:
+                with open(specgramfname, 'wb') as o_f:
                     npsave(o_f, powerspec.T)
             if filterbanks:
                 # convert to Mel filterbanks
                 if fbanks == None: # assume parameters are fixed
                     fbanks = Spectral(nfilt=N_FBANKS,    # nb of filters in mel bank
-                                 alpha=0.97,             # pre-emphasis
-                                 do_dct=False,           # we do not want MFCCs
+                                 #alpha=0.97,             # pre-emphasis
+                                 pre_emph=0.97,
+                                 dct=False,           # we do not want MFCCs
                                  fs=srate,               # sampling rate
-                                 frate=FBANKS_RATE,      # frame rate
-                                 wlen=FBANKS_WINDOW,     # window length
+                                 #frate=FBANKS_RATE,      # frame rate
+                                 window_length=FBANKS_WINDOW,     # window length
                                  nfft=1024,              # length of dft
-                                 do_deltas=False,       # speed
-                                 do_deltasdeltas=False  # acceleration
+                                 deltas=False,       # speed
+                                 #do_deltasdeltas=False  # acceleration
                                  )
                 fbank = fbanks.transform(sound)[0]  # first dimension is for
                                                     # deltas & deltasdeltas
                 fbanksfname = bdir+'/'+fname[:-4]+'_fbanks.npy'
-                with open(fbanksfname, 'w') as o_f:
+                with open(fbanksfname, 'wb') as o_f:
                     npsave(o_f, fbank)
             # TODO wavelets scattergrams / scalograms
-            print "dealt with file", wavfname
+            print("dealt with file", wavfname)
 
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         if '--help' in sys.argv:
-            print USAGE
+            print(USAGE)
             sys.exit(0)
         printdebug = False
         doforcemfcext = False
@@ -185,7 +186,7 @@ if __name__ == '__main__':
             dofilterbanks = True
         if '--no-sox' in sys.argv:
             dosox = False
-        l = filter(lambda x: not '--' in x[0:2], sys.argv)
+        l = [x for x in sys.argv if not '--' in x[0:2]]
         foldername = '.'
         if len(l) > 1:
             foldername = l[1]

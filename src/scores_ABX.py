@@ -1,6 +1,6 @@
 import numpy as np
 import htkmfc
-import sys, cPickle, functools, os
+import sys, pickle, functools, os
 from multiprocessing import Pool, cpu_count
 import scipy.io
 sys.path.append(os.getcwd())
@@ -34,11 +34,11 @@ class InnerLoop(object): # to circumvent pickling pbms w/ multiprocessing.map
         self.transitions = transitions
         self.using_bigram = using_bigram
     def __call__(self, mfcc_file):
-        print "doing", mfcc_file
+        print("doing", mfcc_file)
         start, end = self.likelihoods[1][mfcc_file]
         if VERBOSE:
-            print mfcc_file
-            print start, end
+            print(mfcc_file)
+            print(start, end)
         _, posteriorgrams = viterbi(self.likelihoods[0][start:end],
                                    self.transitions, 
                                    self.map_states_to_phones,
@@ -52,7 +52,7 @@ class InnerLoop(object): # to circumvent pickling pbms w/ multiprocessing.map
             assert(not (self.likelihoods[0][start:end] < -31.0).all())
         self.write_file(mfcc_file, start, end, posteriorgrams)
     def write_file(self, mfcc_file, start, end, posteriorgrams):
-        print ">>> written", mfcc_file
+        print(">>> written", mfcc_file)
         scipy.io.savemat(mfcc_file[:-4] + APPEND_NAME, mdict={
             'depth_1_likelihoods': self.depth_1_likelihoods[start:end],
             'depth_2_likelihoods': self.depth_2_likelihoods[start:end],
@@ -64,7 +64,7 @@ class InnerLoop(object): # to circumvent pickling pbms w/ multiprocessing.map
 if __name__ == "__main__":
     usage = "python scores_ABX.py directory input_hmm [input_dbn dbn_dict]"
     if len(sys.argv) != 3 and len(sys.argv) != 5:
-        print usage
+        print(usage)
         sys.exit(-1)
 
     with open(sys.argv[2]) as ihmmf:
@@ -80,9 +80,9 @@ if __name__ == "__main__":
     if len(sys.argv) == 5:
         from DBN_Gaussian_timit import DBN # not Gaussian if no GRBM
         with open(sys.argv[3]) as idbnf:
-            dbn = cPickle.load(idbnf)
+            dbn = pickle.load(idbnf)
         with open(sys.argv[4]) as idbndtf:
-            dbn_to_int_to_state_tuple = cPickle.load(idbndtf)
+            dbn_to_int_to_state_tuple = pickle.load(idbndtf)
         dbn_phones_to_states = dbn_to_int_to_state_tuple[0]
         depth_1_computer = functools.partial(compute_likelihoods_dbn, dbn, depth=1)
         depth_2_computer = functools.partial(compute_likelihoods_dbn, dbn, depth=2)
@@ -107,18 +107,18 @@ if __name__ == "__main__":
 
     if dbn != None:
         input_n_frames = dbn.rbm_layers[0].n_visible / 39 # TODO generalize
-        print "this is a DBN with", input_n_frames, "frames on the input layer"
-        print "concatenating MFCC files" 
+        print("this is a DBN with", input_n_frames, "frames on the input layer")
+        print("concatenating MFCC files") 
         all_mfcc = np.ndarray((0, dbn.rbm_layers[0].n_visible), dtype='float32')
         map_file_to_start_end = {}
         mfcc_file_name = 'tmp_allen_mfcc_' + str(int(input_n_frames)) + '.npy'
         map_mfcc_file_name = 'tmp_allen_map_file_to_start_end_' + str(int(input_n_frames)) + '.pickle'
         try:
-            print "loading concat MFCC from pickled file"
+            print("loading concat MFCC from pickled file")
             with open(mfcc_file_name) as concat_mfcc:
                 all_mfcc = np.load(concat_mfcc)
             with open(map_mfcc_file_name) as map_mfcc:
-                map_file_to_start_end = cPickle.load(map_mfcc)
+                map_file_to_start_end = pickle.load(map_mfcc)
         except:
             for ind, mfcc_file in enumerate(list_of_mfcc_files):
                 start = all_mfcc.shape[0]
@@ -127,22 +127,22 @@ if __name__ == "__main__":
                     x = padding(input_n_frames, x)
                 all_mfcc = np.append(all_mfcc, x, axis=0)
                 map_file_to_start_end[mfcc_file] = (start, all_mfcc.shape[0])
-                print "did", mfcc_file, "ind", ind
+                print("did", mfcc_file, "ind", ind)
             with open(mfcc_file_name, 'w') as concat_mfcc:
                 np.save(concat_mfcc, all_mfcc)
             with open(map_mfcc_file_name, 'w') as map_mfcc:
-                cPickle.dump(map_file_to_start_end, map_mfcc)
+                pickle.dump(map_file_to_start_end, map_mfcc)
 
         tmp_likelihoods = likelihoods_computer(all_mfcc)
         depth_1_likelihoods = depth_1_computer(all_mfcc)
         depth_2_likelihoods = depth_2_computer(all_mfcc)
         #depth_3_likelihoods = depth_1_computer(all_mfcc) TODO
-        print map_states_to_phones
-        print dbn_phones_to_states
-        columns_remapping = [dbn_phones_to_states[map_states_to_phones[i]] for i in xrange(tmp_likelihoods.shape[1])]
+        print(map_states_to_phones)
+        print(dbn_phones_to_states)
+        columns_remapping = [dbn_phones_to_states[map_states_to_phones[i]] for i in range(tmp_likelihoods.shape[1])]
         likelihoods = (tmp_likelihoods[:, columns_remapping],
             map_file_to_start_end)
-        print "computed all likelihoods"
+        print("computed all likelihoods")
         #likelihoods = (tmp_likelihoods, map_file_to_start_end)
     else:
         all_mfcc = np.ndarray((0, 39), dtype='float32')
@@ -150,28 +150,28 @@ if __name__ == "__main__":
         mfcc_file_name = 'tmp_allen_mfcc_.npy'
         map_mfcc_file_name = 'tmp_allen_map_file_to_start_end_.pickle'
         try:
-            print "loading concat MFCC from pickled file"
+            print("loading concat MFCC from pickled file")
             with open(mfcc_file_name) as concat_mfcc:
                 all_mfcc = np.load(concat_mfcc)
             with open(map_mfcc_file_name) as map_mfcc:
-                map_file_to_start_end = cPickle.load(map_mfcc)
+                map_file_to_start_end = pickle.load(map_mfcc)
         except:
             for ind, mfcc_file in enumerate(list_of_mfcc_files):
                 start = all_mfcc.shape[0]
                 x = htkmfc.open(mfcc_file).getall()
                 all_mfcc = np.append(all_mfcc, x, axis=0)
                 map_file_to_start_end[mfcc_file] = (start, all_mfcc.shape[0])
-                print "did", mfcc_file, "ind", ind
+                print("did", mfcc_file, "ind", ind)
             with open(mfcc_file_name, 'w') as concat_mfcc:
                 np.save(concat_mfcc, all_mfcc)
             with open(map_mfcc_file_name, 'w') as map_mfcc:
-                cPickle.dump(map_file_to_start_end, map_mfcc)
+                pickle.dump(map_file_to_start_end, map_mfcc)
         likelihoods = (likelihoods_computer(all_mfcc), map_file_to_start_end)
 
     il = InnerLoop(likelihoods, map_states_to_phones, transitions, 
             depth_1_likelihoods=depth_1_likelihoods,
             depth_2_likelihoods=depth_2_likelihoods)
-    map(il, list_of_mfcc_files)
+    list(map(il, list_of_mfcc_files))
     #n_processors = cpu_count()
     #p = Pool(n_processors)
     #print "launching", n_processors, "Viterbi"

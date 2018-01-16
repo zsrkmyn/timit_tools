@@ -47,7 +47,7 @@ def extract_from_mlf(mlf):
                 continue
             if line[0] == '"': 
                 if tmp_len_x != 0:
-                    print "the file above this one was mismatching x and y lengths", line
+                    print("the file above this one was mismatching x and y lengths", line)
                 t = htkmfc.open(line.strip('"')[:-3] + 'mfc') # .lab -> .mfc
                 mfc_file = t.getall()
                 with open(line.strip('"')[:-4] + '_ema.npy') as ema_f: # .lab -> _ema.npy
@@ -60,7 +60,7 @@ def extract_from_mlf(mlf):
                 start, end, state = line.split()[:3]
                 start = (int(start)+1)/(MFCC_TIMESTEP * 10000) # htk
                 end = (int(end)+1)/(MFCC_TIMESTEP * 10000) # htk
-                for i in xrange(start, end):
+                for i in range(start, end):
                     tmp_len_x -= 1
                     y.append(state)
                 
@@ -70,27 +70,27 @@ def extract_from_mlf(mlf):
     yy = np.array(y)
     np.save(rootname + '_ylabels.npy', yy)
 
-    print "length x:", len(x), " length y:", len(y)
-    print "shape x:", x.shape, "shape yy:", yy.shape 
+    print("length x:", len(x), " length y:", len(y))
+    print("shape x:", x.shape, "shape yy:", yy.shape) 
 
     if TEST:
         tx = np.load(rootname + '_xdata.npy')
         ty = np.load(rootname + '_ylabels.npy')
         if np.all(tx==x) and np.all(ty==yy):
-            print "SUCCESS: serialized and current in-memory arrays are equal"
+            print("SUCCESS: serialized and current in-memory arrays are equal")
             sys.exit(0)
         else:
-            print "ERROR: serialized and current in-memory arrays differ!"
+            print("ERROR: serialized and current in-memory arrays differ!")
             sys.exit(-1)
 
 
 if __name__ == '__main__':
     folder = '.'
     if len(sys.argv) < 2:
-        print usage
+        print(usage)
         sys.exit(0)
     mlf = sys.argv[1]
-    print "Producing a (x, y) dataset file for:", mlf
-    print "WARNING: only the first 39 MFCC coefficients will be taken into account"
-    print "WARNING: and then 20 EMA coeffs and their speed and acceleration"
+    print("Producing a (x, y) dataset file for:", mlf)
+    print("WARNING: only the first 39 MFCC coefficients will be taken into account")
+    print("WARNING: and then 20 EMA coeffs and their speed and acceleration")
     extract_from_mlf(mlf)

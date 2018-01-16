@@ -2,7 +2,7 @@ import os, copy, sys
 try:
     import htkmfc
 except:
-    print >> sys.stderr, "ERROR: You don't have htkmfc"
+    print("ERROR: You don't have htkmfc", file=sys.stderr)
     sys.exit(-1)
 import numpy as np
 import scipy.stats.stats as sss
@@ -24,10 +24,10 @@ def normalize(folder):
     mean = np.mean(full)
     stddev = sss.tstd(full)
     if stddev == 0:
-        print >> sys.stderr, "*** null stddev, no *.mfc_unnorm file ??? ***"
+        print("*** null stddev, no *.mfc_unnorm file ??? ***", file=sys.stderr)
         sys.exit(-1)
 
-    for key,val in corpus.iteritems():
+    for key,val in corpus.items():
         corpus[key] = (val - mean) / stddev
 
     # verification:
@@ -41,8 +41,8 @@ def normalize(folder):
     ### print sss.tvar(full)
     # /verification
 
-    for key,val in corpus.iteritems():
-        print "Dealt with:", key
+    for key,val in corpus.items():
+        print("Dealt with:", key)
         np.save(key, val)
 
 
@@ -50,6 +50,6 @@ if __name__ == '__main__':
     folder = '.'
     if len(sys.argv) > 1:
         folder = sys.argv[1]
-    print "Normalizing with all the *.mfc_unnorm in", folder
-    print "WARNING: only the first 39 MFCC coefficients will be taken into account"
+    print("Normalizing with all the *.mfc_unnorm in", folder)
+    print("WARNING: only the first 39 MFCC coefficients will be taken into account")
     normalize(folder)

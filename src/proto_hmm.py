@@ -36,6 +36,7 @@ tmp_train_folder = sys.argv[1].rstrip('/')
 with open(tmp_train_folder + '/train.scp') as f:
      process = subprocess.Popen(['HList', '-t', f.readline().strip('\n')], stdout=subprocess.PIPE)
      for line in process.stdout:
+         line = line.decode('ascii')
          if "Sample Kind:" in line:
              header += line.rstrip('\n').split(':')[-1].strip() + '>'
 with open(tmp_train_folder + '/proto.hmm', 'w') as wf:

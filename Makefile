@@ -11,9 +11,9 @@ help:
 prepare_timit: wav_config src/mfcc_and_gammatones.py src/timit_to_htk_labels.py
 	@echo -e "*** preparing the dataset for phones recognition ***"
 	@echo -e "\n>>> produce MFCC and filterbanks from WAV files\n"
-	python src/mfcc_and_gammatones.py --htk-mfcc --forcemfcext --filterbanks $(dataset)/train
-	python src/mfcc_and_gammatones.py --htk-mfcc --forcemfcext --filterbanks $(dataset)/dev
-	python src/mfcc_and_gammatones.py --htk-mfcc --forcemfcext --filterbanks $(dataset)/test
+	python src/mfcc_and_gammatones.py --no-sox --htk-mfcc --forcemfcext --filterbanks $(dataset)/train
+	python src/mfcc_and_gammatones.py --no-sox --htk-mfcc --forcemfcext --filterbanks $(dataset)/dev
+	python src/mfcc_and_gammatones.py --no-sox --htk-mfcc --forcemfcext --filterbanks $(dataset)/test
 	@echo -e "\n>>> transform .phn files into .lab files (frames into nanoseconds)\n"
 	python src/timit_to_htk_labels.py $(dataset)/train
 	python src/timit_to_htk_labels.py $(dataset)/dev
@@ -127,7 +127,7 @@ train_monophones_monogauss:
 	cp $(dataset_train_folder)/labels $(TMP_TRAIN_FOLDER)/monophones0
 	cp $(dataset_train_folder)/train.mlf $(TMP_TRAIN_FOLDER)/
 	cp $(dataset_train_folder)/train.scp $(TMP_TRAIN_FOLDER)/
-	python -c "import sys;print '( < ' + ' | '.join([line.strip('\n') for line in sys.stdin]) + ' > )'" < $(TMP_TRAIN_FOLDER)/monophones0 > $(TMP_TRAIN_FOLDER)/gram
+	python -c "import sys;print('( < ' + ' | '.join([line.strip('\n') for line in sys.stdin]) + ' > )')" < $(TMP_TRAIN_FOLDER)/monophones0 > $(TMP_TRAIN_FOLDER)/gram
 	HParse $(TMP_TRAIN_FOLDER)/gram $(TMP_TRAIN_FOLDER)/wdnet
 	#HBuild $(TMP_TRAIN_FOLDER)/monophones0 $(TMP_TRAIN_FOLDER)/wdnet
 	#cp proto.hmm $(TMP_TRAIN_FOLDER)/
@@ -338,7 +338,7 @@ all_timit:
 	make bigram_LM
 	make test_monophones_bigram_LM dataset_test_folder=$(dataset)/test
 	make align input_scp=$(dataset)/train/train.scp input_mlf=$(dataset)/train/train.mlf output_mlf=$(dataset)/aligned_train.mlf
-	make align input_scp=$(dataset)/dev/dev.scp input_mlf=$(dataset)/dev/dev.mlf output_mlf=$(dataset)/aligned_dev.mlf
+	#make align input_scp=$(dataset)/dev/dev.scp input_mlf=$(dataset)/dev/dev.mlf output_mlf=$(dataset)/aligned_dev.mlf
 	make align input_scp=$(dataset)/test/test.scp input_mlf=$(dataset)/test/test.mlf output_mlf=$(dataset)/aligned_test.mlf
 
 

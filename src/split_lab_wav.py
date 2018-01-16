@@ -37,10 +37,10 @@ def wave_split(start, end, wavfname, compt):
     interval = sample[start_in_frames:end_in_frames]
     if interval.shape[0] == 0:
         # do not do this start/end split
-        print >> sys.stderr, sample
-        print >> sys.stderr, sample.shape
-        print >> sys.stderr, start_in_frames
-        print >> sys.stderr, end_in_frames
+        print(sample, file=sys.stderr)
+        print(sample.shape, file=sys.stderr)
+        print(start_in_frames, file=sys.stderr)
+        print(end_in_frames, file=sys.stderr)
         return -1
     max_volume = np.max(interval)
     ###wavefile.readframes(start_in_frames) # skipping to start
@@ -98,7 +98,7 @@ def split_in(folder, split_phones):
     for d, _, fs in os.walk(folder):
         for fname in fs:
             files_buffer.append((d, fname))
-    print files_buffer
+    print(files_buffer)
     for d, fname in files_buffer:
         if fname[-4:] != '.lab' or fname[0] == '.':
             continue
@@ -121,13 +121,13 @@ def split_in(folder, split_phones):
                         end = p_buffer[-2][1]
                         assert(end > start)
                         if wave_split(start, end, wav_fname, compt) != 0:
-                            print >> sys.stderr, "ERROR with:", start, end, wav_fname, compt
+                            print("ERROR with:", start, end, wav_fname, compt, file=sys.stderr)
                             break
                         else:
                             write_lab(p_buffer, lab_fname, compt)
                             compt += 1
                     p_buffer = [(int(s), int(e), p)]
-        print "did", lab_fname
+        print("did", lab_fname)
         # some cleaning now:
         os.remove(lab_fname)
         if os.path.isfile(mfc_fname):
@@ -147,7 +147,7 @@ if __name__ == '__main__':
         folder = sys.argv[1]
         split_phones = sys.argv[2:]
     else:
-        print usage
+        print(usage)
         sys.exit(-1)
-    print "Spliting *.lab and *.wav files on", split_phones, "in", folder
+    print("Spliting *.lab and *.wav files on", split_phones, "in", folder)
     split_in(folder, split_phones) 

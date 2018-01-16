@@ -94,10 +94,10 @@ def extract_from_mlf(mlf, do_gammatones):
                     fbank = None
                     with open(line.strip('"')[:-4] + '_fbanks.npy') as fbanksf:
                         fbank = np.load(fbanksf)
-                    if fbank != None:
+                    if fbank is not None:
                         # it seems filterbanks obtained with spectral are a little longer at the end
                         if DEBUG:
-                            print "cutting the last", fbank.shape[0] - t.getall().shape[0], "frames from the filterbank"
+                            print("cutting the last", fbank.shape[0] - t.getall().shape[0], "frames from the filterbank")
                         fbank = fbank[:t.getall().shape[0]]
                         x_fbank = np.append(x_fbank, fbank, axis=0)
                         assert t.getall().shape[0] == fbank.shape[0], "MFCC and filterbank not of the same length (not on the same sampling rate)"
@@ -121,12 +121,12 @@ def extract_from_mlf(mlf, do_gammatones):
                     # append
                     tmp = gamma_speed_accel[:t.getall().shape[0]] # TODO check
                     if tmp.shape[0] != t.getall().shape[0]: # TODO remove
-                        print line
-                        print tmp.shape
-                        print t.getall().shape
-                        print n_samples
-                        print g.shape
-                        print "exiting because of the mismatch"
+                        print(line)
+                        print(tmp.shape)
+                        print(t.getall().shape)
+                        print(n_samples)
+                        print(g.shape)
+                        print("exiting because of the mismatch")
                         sys.exit(-1)
                     x_gamma = np.append(x_gamma, tmp, axis=0)
 
@@ -134,7 +134,7 @@ def extract_from_mlf(mlf, do_gammatones):
                 start, end, state = line.split()[:3]
                 start = (int(start)+9999)/(MFCC_TIMESTEP * 10000) # htk
                 end = (int(end)+9999)/(MFCC_TIMESTEP * 10000) # htk
-                for i in xrange(start, end):
+                for i in range(start, end):
                     tmp_len_x -= 1
                     y.append(state)
                     y_spkr.append(speaker_label)
@@ -151,8 +151,8 @@ def extract_from_mlf(mlf, do_gammatones):
     np.save(rootname + '_ylabels.npy', yy)
     np.save(rootname + '_yspeakers.npy', yy_spkr)
 
-    print "length x:", len(x), "length y:", len(y), "length y_spkr:", len(y_spkr)
-    print "shape x:", x.shape, "shape yy:", yy.shape, "shape yy_spkr:", yy_spkr.shape
+    print("length x:", len(x), "length y:", len(y), "length y_spkr:", len(y_spkr))
+    print("shape x:", x.shape, "shape yy:", yy.shape, "shape yy_spkr:", yy_spkr.shape)
 
     if TEST:
         tx = np.load(rootname + '_xdata.npy')
@@ -165,13 +165,13 @@ def extract_from_mlf(mlf, do_gammatones):
             assert_allclose(tx_fbank, x_fbank, err_msg="x_fbank and its serialized version are not allclose")
             if do_gammatones:
                 assert_allclose(tx_gamma, x_gamma, err_msg="x_gamma and its serialized version are not allclose")
-            print "SUCCESS: serialized and current in-memory arrays are equal"
+            print("SUCCESS: serialized and current in-memory arrays are equal")
             sys.exit(0)
         else:
-            print "ERROR: serialized and current X (MFCC) or Y in-memory arrays differ!"
-            print "x (MFCC):", np.all(tx==x)
-            print "y (labels):", np.all(ty==yy)
-            print "y (speakers):", np.all(ty_spkr==yy_spkr)
+            print("ERROR: serialized and current X (MFCC) or Y in-memory arrays differ!")
+            print("x (MFCC):", np.all(tx==x))
+            print("y (labels):", np.all(ty==yy))
+            print("y (speakers):", np.all(ty_spkr==yy_spkr))
             sys.exit(-1)
 
 
@@ -179,11 +179,11 @@ if __name__ == '__main__':
     folder = '.'
     do_gammatones = False
     if len(sys.argv) < 2:
-        print usage
+        print(usage)
         sys.exit(0)
     if '--gamma' in sys.argv:
         do_gammatones = True
     mlf = sys.argv[1]
-    print "Producing a (x, y) dataset file for:", mlf
-    print "WARNING: only the first 39 MFCC coefficients will be taken into account"
+    print("Producing a (x, y) dataset file for:", mlf)
+    print("WARNING: only the first 39 MFCC coefficients will be taken into account")
     extract_from_mlf(mlf, do_gammatones)

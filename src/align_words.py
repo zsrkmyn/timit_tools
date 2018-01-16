@@ -6,7 +6,7 @@ from collections import defaultdict
 import numpy as np
 from dtw import DTW
 from mfcc_and_gammatones import FBANKS_RATE
-from itertools import izip
+
 from random import shuffle
 
 OLD_SCHEME = False
@@ -19,7 +19,7 @@ Will only work on functions with non-mutable arguments
         self.fn = fn
         self.memo = {}
     def __call__(self, *args):
-        if not self.memo.has_key(args):
+        if args not in self.memo:
             self.memo[args] = self.fn(*args)
         return self.memo[args]
 
@@ -66,7 +66,7 @@ def extract_features(word, fname, s, e, before_after=3):
     try:
         fb = np.load(fbankfname)
     except IOError:
-        print "missing fbank for", fbankfname
+        print("missing fbank for", fbankfname)
     before = max(0, sf - before_after)
     after = min(ef + before_after, fb.shape[0])
     return (word, talker, fb[before:after])
@@ -77,7 +77,7 @@ def pair_and_extract_same_words(words_timings, min_len_word_char=5):
     ('word', 'talker', 'fbanks') that are matched.
     """
     word_pairs = []
-    for word, l in words_timings.iteritems():
+    for word, l in words_timings.items():
         if len(word) < min_len_word_char:
             continue
         for i, (fname1, s1, e1) in enumerate(l):
@@ -101,7 +101,7 @@ def pair_word_features(words_timings, min_len_word_char=3, before_after=3,
       - omit_words: ([str]) (list of strings), words to omit / not align.
     """
     words_feats = defaultdict(lambda: [])
-    for word, l in words_timings.iteritems():
+    for word, l in words_timings.items():
         if len(word) < min_len_word_char or word in omit_words: 
             continue
         for fname, s, e in l:
@@ -111,7 +111,7 @@ def pair_word_features(words_timings, min_len_word_char=3, before_after=3,
             with open(fname.split('.')[0] + "_fbanks.npy") as f:
                 fb = np.load(f)
             if fb == None:
-                print >> sys.stderr, "problem with file", fname
+                print("problem with file", fname, file=sys.stderr)
                 continue 
             before = max(0, sf - before_after)
             after = min(ef + before_after, fb.shape[0])
@@ -135,11 +135,11 @@ def match_words(words_feats, serial=False):
     """
     
     #print d
-    print "features rate (number of features vector per second)", FBANKS_RATE
+    print("features rate (number of features vector per second)", FBANKS_RATE)
     res = []
     if serial:
-        for word, l in words_feats.iteritems():
-            print word
+        for word, l in words_feats.items():
+            print(word)
             for i, x in enumerate(l):
                 for j, y in enumerate(l):
                     if i >= j:  # that's symmetric!
@@ -148,7 +148,7 @@ def match_words(words_feats, serial=False):
     else:
         res = joblib.Parallel(n_jobs=cpu_count()-1)(joblib.delayed(do_dtw)
                 (word, l[i], y)
-                    for word, l in words_feats.iteritems()
+                    for word, l in words_feats.items()
                         for i, x in enumerate(l)
                             for j, y in enumerate(l)
                                 if i < j)
@@ -186,17 +186,17 @@ if __name__ == '__main__':
     folder = '.'
     if len(sys.argv) > 1:
         folder = sys.argv[1].rstrip('/')
-    print "working on folder:", folder
+    print("working on folder:", folder)
     output_name = "dtw_words_2"
     if folder != ".":
         output_name += "_" + folder.split('/')[-1]
 
     if OLD_SCHEME:
         words_feats = pair_word_features(find_words(folder), min_len_word_char=5)
-        print "number of words in all (not pairs!):", len(words_feats)
+        print("number of words in all (not pairs!):", len(words_feats))
 
         matched_words = match_words(words_feats)
-        print "number of word pairs:", len(matched_words)
+        print("number of word pairs:", len(matched_words))
         joblib.dump(matched_words, output_name + ".joblib",
                 compress=5, cache_size=512)
         # compress doesn't work for too big datasets!
@@ -206,9 +206,9 @@ if __name__ == '__main__':
                 output_name + ".joblib", compress=5, cache_size=512)
     else:
         words_timings = find_words(folder)
-        print "number of word types in all (not pairs!):", len(words_timings)
+        print("number of word types in all (not pairs!):", len(words_timings))
         same = pair_and_extract_same_words(words_timings)
-        print "number of pairs of same words:", len(same)
+        print("number of pairs of same words:", len(same))
         same_words = joblib.Parallel(n_jobs=cpu_count()-1)(joblib.delayed(do_dtw_pair)
                 (sp[0], sp[1]) for sp in same)
         

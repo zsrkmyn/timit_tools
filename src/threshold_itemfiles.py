@@ -20,11 +20,11 @@ def threshold_item(db, item_file, upper_threshod, seed=0,
 
 
 for item_file in glob.iglob("*.item"):
-    print item_file
+    print(item_file)
     with open(item_file, 'r') as inf:
         header = inf.readline()
     columns = header.split('#')[-1].split()
-    print columns
+    print(columns)
     thresholds = [20]
     db, _, feat_db = database.load(item_file, features_info=True)
     db = pd.concat([feat_db, db], axis=1)

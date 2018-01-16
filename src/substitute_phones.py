@@ -1,4 +1,4 @@
-import os, sys, cPickle, json, signal
+import os, sys, pickle, json, signal
 
 """
 License: WTFPL http://www.wtfpl.net
@@ -17,8 +17,8 @@ respectively by !ENTER and !EXIT.
 
 
 def signal_handler(signal, frame):
-    print frame
-    print 'Careful about your last file, it may have been moved to ${name}~' 
+    print(frame)
+    print('Careful about your last file, it may have been moved to ${name}~') 
     # TODO
     sys.exit(-1)
 
@@ -34,7 +34,7 @@ def process(folder,
             if fname[-4:] != '.lab':
                 continue
             fullname = d.rstrip('/') + '/' + fname
-            print fullname
+            print(fullname)
             phones_before = []
             phones_after = []
             os.rename(fullname, fullname+'~')
@@ -46,7 +46,7 @@ def process(folder,
                 tmpline = line
                 tmpline = tmpline.replace('-', '')
                 tmp = tmpline.split()
-                for k, v in foldings.iteritems():
+                for k, v in foldings.items():
                     if tmp[-1] == k:
                         tmp[-1] = v
                         tmpline = ' '.join(tmp)
@@ -73,18 +73,18 @@ def process(folder,
                 c_before[tmp_phn] = c_before.get(tmp_phn, 0) + 1
             for tmp_phn in phones_after:
                 c_after[tmp_phn] = c_after.get(tmp_phn, 0) + 1
-            print "dealt with", fullname 
-    print "Counts before substitution", c_before
-    print "Counts after substitution", c_after
-    with open(folder.rstrip('/') + '/unigrams.pickle', 'w') as unidump:
-        cPickle.dump(c_after, unidump)
+            print("dealt with", fullname) 
+    print("Counts before substitution", c_before)
+    print("Counts after substitution", c_after)
+    with open(folder.rstrip('/') + '/unigrams.pickle', 'wb') as unidump:
+        pickle.dump(c_after, unidump)
 
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
     if len(sys.argv) > 1:
         if '--help' in sys.argv:
-            print doc
+            print(doc)
             sys.exit(0)
         foldername = sys.argv[1]
 
@@ -99,7 +99,7 @@ if __name__ == '__main__':
             if '.json' in arg[-5:]:
                 with open(arg) as f:
                     foldings = json.load(f)
-                print "using foldings:", arg
+                print("using foldings:", arg)
         process(foldername, sentences, foldings, startend_sil)
     else:
-        print doc
+        print(doc)

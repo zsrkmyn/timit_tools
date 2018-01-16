@@ -29,7 +29,7 @@ def create_hmmdefs(proto, labels, output_folder, vFloors=""):
         for line in open(vFloors):
             macros_file.write(line)
     macros_file.close()
-    print ">>> Written", macros_fname, "file"
+    print(">>> Written", macros_fname, "file")
     header = False
     for line in labels_file:
         phone = line.rstrip('\n')
@@ -45,12 +45,12 @@ def create_hmmdefs(proto, labels, output_folder, vFloors=""):
             elif started == True:
                 hmmdefs_file.write(line)
     hmmdefs_file.close()
-    print ">>> Written", hmmdefs_fname, "file"
+    print(">>> Written", hmmdefs_fname, "file")
 
 
 if __name__ == '__main__':
     if len(sys.argv) < 4:
-        print >> sys.stderr, usage
+        print(usage, file=sys.stderr)
         sys.exit(-1)
     if len(sys.argv) > 4:
         create_hmmdefs(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])

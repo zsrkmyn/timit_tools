@@ -47,13 +47,13 @@ def add_sp(in_hmmdef, out_hmmdef, out_labels):
             out.write(line) # we should be skipping at this point
     out.close()
     out_l.close()
-    print 'Written', out_labels, 'adding "sp"'
-    print "Written", out_hmmdef, "with a short-pause model"
+    print('Written', out_labels, 'adding "sp"')
+    print("Written", out_hmmdef, "with a short-pause model")
 
 
 if __name__ == '__main__':
     if len(sys.argv) < 4:
-        print >> sys.stderr, usage
+        print(usage, file=sys.stderr)
         sys.exit(-1)
     add_sp(sys.argv[1], sys.argv[2], sys.argv[3])
 

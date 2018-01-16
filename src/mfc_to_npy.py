@@ -22,9 +22,9 @@ def padding_after(nframes, x):
 def padding(nframes, x):
     ba = (nframes - 1) / 2 # before // after
     x_f = np.zeros((x.shape[0], nframes * x.shape[1]), dtype='float32')
-    print x.shape
-    print x_f.shape
-    for i in xrange(x.shape[0]):
+    print(x.shape)
+    print(x_f.shape)
+    for i in range(x.shape[0]):
         x_f[i] = np.pad(x[max(0, i - ba):i + ba + 1].flatten(),
                 (max(0, (ba - i) * x.shape[1]), 
                     max(0, ((i+ba+1) - x.shape[0]) * x.shape[1])),
@@ -39,7 +39,7 @@ def concat_all(folder):
             if fname[-4:] != '.mfc':
                 continue
             fullfname = d + '/' + fname
-            print fullfname
+            print(fullfname)
             t = htkmfc.open(fullfname)
             l.append(t.getall())
     stats = np.concatenate(l)
@@ -55,6 +55,6 @@ if __name__ == '__main__':
     folder = '.'
     if len(sys.argv) > 1:
         folder = sys.argv[1]
-    print "Concatenating all the *.mfc into a big *.npy file", folder
+    print("Concatenating all the *.mfc into a big *.npy file", folder)
     concat_all(folder.rstrip('/'))
 

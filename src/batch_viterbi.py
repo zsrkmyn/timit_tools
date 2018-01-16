@@ -2,12 +2,13 @@ import numpy as np
 from numpy import linalg
 import functools
 import sys, math
-import cPickle
+import pickle
 from collections import defaultdict, deque
 import htkmfc
 import itertools
 from multiprocessing import Pool, cpu_count
 import os
+from functools import reduce
 sys.path.append(os.getcwd())
 
 usage = """
@@ -60,14 +61,14 @@ def eval_gauss_mixt(v, gmixt):
         pi_k, mu_k, sigma_k_inv = mix_comp
         return pi_k * math.exp(-0.5 * np.dot((v - mu_k).T, 
                     np.dot(sigma_k_inv, v - mu_k)))
-    return reduce(lambda x, y: x + y, map(eval_gauss_comp, 
-        itertools.izip(gmixt[0], gmixt[1], gmixt[2])))
+    return reduce(lambda x, y: x + y, list(map(eval_gauss_comp, 
+        zip(gmixt[0], gmixt[1], gmixt[2]))))
 
 
 def precompute_det_inv(gmms):
     # /!\ iteration order is important, this gives us:
     ret = []
-    for _, gm in gmms.iteritems():
+    for _, gm in gmms.items():
         for gm_st in gm:
             pi_k = []
             mu_k = []
@@ -111,7 +112,7 @@ def padding(nframes, x):
     """ padding with (nframes-1)/2 frames before & after for *.mfc mat x"""
     ba = (nframes - 1) / 2
     x_f = np.zeros((x.shape[0], nframes * x.shape[1]), dtype='float32')
-    for i in xrange(x.shape[0]):
+    for i in range(x.shape[0]):
         x_f[i] = np.pad(x[max(0, i-ba):i+ba+1].flatten(),
                 (max(0, (ba-i) * x.shape[1]), max(0, 
                     ((i+ba+1) - x.shape[0]) * x.shape[1])), 
@@ -142,18 +143,18 @@ def compute_likelihoods_dbn(dbn, mat, depth=np.iinfo(int).max, normalize=True, u
     out_ret = None
     if depth < dbn.n_layers:
         max_layer = min(dbn.n_layers, depth)
-        print max_layer
+        print(max_layer)
         out_ret = np.ndarray((mat.shape[0], dbn.rbm_layers[max_layer].W.shape[1].eval()), dtype="float32")
     else:
         out_ret = np.ndarray((mat.shape[0], dbn.logLayer.b.shape[0].eval()), dtype="float32")
 
-    for ind in xrange(0, mat.shape[0]+1, batch_size):
+    for ind in range(0, mat.shape[0]+1, batch_size):
         output = shared(mat[ind:ind+batch_size])
-        print "evaluating the DBN on all the test input"
-        for layer_ind in xrange(max_layer):
+        print("evaluating the DBN on all the test input")
+        for layer_ind in range(max_layer):
             [pre, output] = dbn.rbm_layers[layer_ind].propup(output)
         if depth >= dbn.n_layers:
-            print "dbn output shape", output.shape.eval()
+            print("dbn output shape", output.shape.eval())
             ret = T.nnet.softmax(T.dot(output, dbn.logLayer.W) + dbn.logLayer.b)
             out_ret[ind:ind+batch_size] = T.log(ret).eval()
         else:
@@ -164,7 +165,7 @@ def compute_likelihoods_dbn(dbn, mat, depth=np.iinfo(int).max, normalize=True, u
 def phones_mapping(gmms):
     map_states_to_phones = {}
     i = 0
-    for phn, gm in gmms.iteritems():
+    for phn, gm in gmms.items():
         st_id = 2
         for gm_st in gm:
             map_states_to_phones[i] = phn + "[" + str(st_id) + "]"
@@ -215,7 +216,7 @@ def viterbi(likelihoods, transitions, map_states_to_phones,
     """ This function applies Viterbi on the likelihoods already computed """
     starting_state = None
     ending_state = None
-    for state, phone in map_states_to_phones.iteritems():
+    for state, phone in map_states_to_phones.items():
         if using_bigram:
             if phone == '!ENTER[2]' or phone == 'h#[2]': # hardcoded TODO remove
                 starting_state = state
@@ -265,8 +266,8 @@ def viterbi(likelihoods, transitions, map_states_to_phones,
                 type_converters=converters.blitz,
                 compiler = 'gcc')
     except:
-        for i in xrange(1, likelihoods.shape[0]):
-            for j in xrange(likelihoods.shape[1]):
+        for i in range(1, likelihoods.shape[0]):
+            for j in range(likelihoods.shape[1]):
                 max_ = -1000000000000.0 # log
                 max_ind = -2
                 for k in nonnulls:
@@ -281,13 +282,13 @@ def viterbi(likelihoods, transitions, map_states_to_phones,
                 backpointers[i-1][j] = max_ind
             nonnulls = [jj for jj, val in enumerate(likelihoods[i]) if val > -1000000.0] # log
             if len(nonnulls) == 0:
-                print >> sys.stderr, ">>>>>>>>> NONNULLS IS EMPTY", i, likelihoods.shape[0]
+                print(">>>>>>>>> NONNULLS IS EMPTY", i, likelihoods.shape[0], file=sys.stderr)
 
     if using_bigram:
         states = deque([(ending_state, posteriors[likelihoods.shape[0]-1][ending_state])])
     else:
         states = deque([(posteriors[likelihoods.shape[0]-1].argmax(), posteriors[likelihoods.shape[0]-1].max())])
-    for i in xrange(likelihoods.shape[0] - 2, -1, -1):
+    for i in range(likelihoods.shape[0] - 2, -1, -1):
         states.appendleft((backpointers[i][states[0][0]], posteriors[i][backpointers[i][states[0][0]]]))
         #states.appendleft((posteriors[i].argmax(), posteriors[i].max()))
 
@@ -339,7 +340,7 @@ def parse_wdnet(trans, iwdnf):
             trans[1][phone1.to_ind[-1]][phone2.to_ind[0]] = bp[phn1] * np.exp(log_prob)
 
     assert(n_phones == len(indices_to_phones))
-    for phn1, phone1 in trans[0].iteritems():
+    for phn1, phone1 in trans[0].items():
         trans[1][phone1.to_ind[-1]] /= trans[1][phone1.to_ind[-1]].sum(0) # TODO remove (that's because of !EXIT)
         #print trans[1][phone1.to_ind[-1]].sum(0)
         assert(1.0 - epsilon < trans[1][phone1.to_ind[-1]].sum(0) < 1.0 + epsilon) # make sure we normalized our probs
@@ -353,8 +354,8 @@ def initialize_transitions(trans, unibi=None, unigrams_only=False):
     uni = None
     bi = None
     if unibi != None:
-        uni, bi, discounts = cPickle.load(unibi)
-    for phn1, phone1 in trans[0].iteritems():
+        uni, bi, discounts = pickle.load(unibi)
+    for phn1, phone1 in trans[0].items():
         if phn1 == '!EXIT':                                                                  # TODO remove
             trans[1][phone1.to_ind[-1]][:] = 0.0 # no trans to anything else                 # TODO remove
             trans[1][phone1.to_ind[-1]][phone1.to_ind[-1]] = 1.0 # no trans to anything else # TODO remove
@@ -362,7 +363,7 @@ def initialize_transitions(trans, unibi=None, unigrams_only=False):
         already_in_prob = trans[1][phone1.to_ind[-1]][phone1.to_ind[-1]]
         to_distribute = (1.0 - already_in_prob) 
         value = to_distribute / (len(trans[0]) - 1) # - !ENTER                               # TODO remove
-        for phn2, phone2 in trans[0].iteritems():
+        for phn2, phone2 in trans[0].items():
             if phn2 == '!ENTER':                                                             # TODO remove
                 trans[1][phone1.to_ind[-1]][phone2.to_ind[0]] = 0.0 # no trans to !ENTER     # TODO remove
                 continue                                                                     # TODO remove
@@ -388,11 +389,11 @@ def penalty_scale(trans, insertion_penalty=0.0, scale_factor=1.0):
      * multiplies the phones transitions by the grammar scale factor
     """
     log_trans = np.log(trans[1] + epsilon_log)
-    for phn1, phone1 in trans[0].iteritems():
-        for phn2, phone2 in trans[0].iteritems():
+    for phn1, phone1 in trans[0].items():
+        for phn2, phone2 in trans[0].items():
             log_trans[phone1.to_ind[-1]][phone2.to_ind[0]] *= scale_factor
             log_trans[phone1.to_ind[-1]][phone2.to_ind[0]] -= insertion_penalty
-    print "Insertion penalty:", insertion_penalty, "and grammar scale factor:", scale_factor
+    print("Insertion penalty:", insertion_penalty, "and grammar scale factor:", scale_factor)
     return (trans[0], log_trans)
 
 
@@ -418,15 +419,15 @@ def parse_lm_matrix(trans, f):
                     tmp_probs.append(pr)
             else:
                 tmp_probs.append(prob)
-        assert(len(tmp_probs) == len(phones) == len(p.keys()))
+        assert(len(tmp_probs) == len(phones) == len(list(p.keys())))
         for j, prob in enumerate(tmp_probs):
             p[phones[i]][phones[j]] = float(prob)
 
-    for phn1, d in p.iteritems():
+    for phn1, d in p.items():
         phone1 = trans[0][phn1]
         buffer_prob = 1.0 - trans[1][phone1.to_ind[-1]].sum(0)
         assert(buffer_prob != 0.0) # you would never go out of this phone (/!\ !EXIT)
-        for phn2, prob in d.iteritems():
+        for phn2, prob in d.items():
             # transition from phn1 to phn2
             phone2 = trans[0][phn2]
             trans[1][phone1.to_ind[-1]][phone2.to_ind[0]] = buffer_prob * prob
@@ -466,11 +467,11 @@ def parse_lm(trans, f):
         elif parsing2grams:
             l = clean(line).split()
             if len(l) != 3:
-                print >> sys.stderr, "bad language model file format"
+                print("bad language model file format", file=sys.stderr)
                 sys.exit(-1)
             p_2grams[l[1]][l[2]] = float(l[0]) # log10 prob, already discounted
             parsed2grams += 1
-    print "Parsed", parsed1grams, "1-grams, and", parsed2grams, "2-grams"
+    print("Parsed", parsed1grams, "1-grams, and", parsed2grams, "2-grams")
 
     # do the backed-off probs for p_2grams[phn1][phn2] = P(phn2|phn1)
 #    for phn1, d in p_2grams.iteritems():
@@ -488,12 +489,12 @@ def parse_lm(trans, f):
     # edit the trans[1] matrix with the backed-off probs,
     # could do in the above "backed-off probs" loop 
     # I but prefer to keep it separated
-    for phn1, b1_1g in b_1grams.iteritems():
+    for phn1, b1_1g in b_1grams.items():
     #for phn1, d in p_2grams.iteritems():
         phone1 = trans[0][phn1]
         buffer_prob = 1.0 - trans[1][phone1.to_ind[-1]].sum(0)
         assert(buffer_prob != 0.0) # you would never go out of this phone (/!\ !EXIT)
-        for phn2, p2_1g in p_1grams.iteritems():
+        for phn2, p2_1g in p_1grams.items():
         #for phn2, log_prob in d.iteritems():
             # transition from phn1 to phn2
             phone2 = trans[0][phn2]
@@ -553,17 +554,17 @@ def parse_hmm(f):
         elif '<MEAN>' in line or '<VARIANCE>' in line:
             if not len(gmms[phn][-1]):
                 gmms[phn][-1].append([1.0])
-            gmms[phn][-1][-1].append(np.array(map(float, 
-                clean(l[i+1]).split()), dtype='float32'))
+            gmms[phn][-1][-1].append(np.array(list(map(float, 
+                clean(l[i+1]).split())), dtype='float32'))
         elif '<TRANSP>' in line:
             n_st = int(clean(line).split()[1]) - 2  # we also remove init/end
             transitions[0][phn] = Phone(phn_id, phn)
-            for j in xrange(n_st):
+            for j in range(n_st):
                 transitions[0][phn].update(current_states_numbers + j)
                 transitions[1][current_states_numbers + j] = \
-                    [0.0 for tmp_k in xrange(current_states_numbers)] + \
-                    map(float, clean(l[i + j + 2]).split()[1:-1]) + \
-                    [0.0 for tmp_k in xrange(n_states_tot
+                    [0.0 for tmp_k in range(current_states_numbers)] + \
+                    list(map(float, clean(l[i + j + 2]).split()[1:-1])) + \
+                    [0.0 for tmp_k in range(n_states_tot
                         - current_states_numbers - n_st)]
             current_states_numbers += n_st
     assert(n_states_tot == current_states_numbers)
@@ -591,8 +592,8 @@ class InnerLoop(object): # to circumvent pickling pbms w/ multiprocessing.map
         cline = clean(line)
         start, end = self.likelihoods[1][cline]
         if VERBOSE:
-            print cline
-            print start, end
+            print(cline)
+            print(start, end)
         s = '"' + cline[:-3] + 'rec"\n' + \
                 string_mlf(self.map_states_to_phones,
                         viterbi(self.likelihoods[0][start:end],
@@ -619,9 +620,9 @@ def process(ofname, iscpfname, ihmmfname,
     dbn_to_int_to_state_tuple = None
     if idbnfname != None:
         with open(idbnfname) as idbnf:
-            dbn = cPickle.load(idbnf)
+            dbn = pickle.load(idbnf)
         with open(idbndictstuple) as idbndtf:
-            dbn_to_int_to_state_tuple = cPickle.load(idbndtf)
+            dbn_to_int_to_state_tuple = pickle.load(idbndtf)
         dbn_phones_to_states = dbn_to_int_to_state_tuple[0]
         likelihoods_computer = functools.partial(compute_likelihoods_dbn, dbn)
         # like that = for GRBM first layer (normalize=True, unit=False)
@@ -653,17 +654,17 @@ def process(ofname, iscpfname, ihmmfname,
     
     if dbn != None:
         input_n_frames = dbn.rbm_layers[0].n_visible / 39 # TODO generalize
-        print "this is a DBN with", input_n_frames, "frames on the input layer"
+        print("this is a DBN with", input_n_frames, "frames on the input layer")
         mfcc_file_name = 'tmp_mfcc_' + str(int(input_n_frames)) + '.npy'
         map_mfcc_file_name = 'tmp_map_file_to_start_end_' + str(int(input_n_frames)) + '.pickle'
         try: # TODO remove?
-            print "loading concat MFCC from pickled file", mfcc_file_name
+            print("loading concat MFCC from pickled file", mfcc_file_name)
             with open(mfcc_file_name) as concat_mfcc:
                 all_mfcc = np.load(concat_mfcc)
             with open(map_mfcc_file_name) as map_mfcc:
-                map_file_to_start_end = cPickle.load(map_mfcc)
+                map_file_to_start_end = pickle.load(map_mfcc)
         except:
-            print "concatenating MFCC files" # TODO parallelize + use np.concatenate
+            print("concatenating MFCC files") # TODO parallelize + use np.concatenate
             all_mfcc = np.ndarray((0, dbn.rbm_layers[0].n_visible), dtype='float32')
             map_file_to_start_end = {}
             with open(iscpfname) as iscpf:
@@ -673,19 +674,19 @@ def process(ofname, iscpfname, ihmmfname,
                     x = htkmfc.open(cline).getall()
                     if input_n_frames > 1:
                         x = padding(input_n_frames, x)
-                    print all_mfcc.shape
-                    print x.shape
+                    print(all_mfcc.shape)
+                    print(x.shape)
                     all_mfcc = np.append(all_mfcc, x, axis=0)
                     map_file_to_start_end[cline] = (start, all_mfcc.shape[0])
 
             with open(mfcc_file_name, 'w') as concat_mfcc:
                 np.save(concat_mfcc, all_mfcc)
             with open(map_mfcc_file_name, 'w') as map_mfcc:
-                cPickle.dump(map_file_to_start_end, map_mfcc)
+                pickle.dump(map_file_to_start_end, map_mfcc)
     else: # GMM
         all_mfcc = np.ndarray((0, 39), dtype='float32') # TODO generalize
 
-    print "computing likelihoods"
+    print("computing likelihoods")
     if dbn != None: # TODO clean
         # TODO REMOVE
         #gmm_likelihoods = gmm_likelihoods_computer(all_mfcc[:, xrange(195,234)])
@@ -696,14 +697,14 @@ def process(ofname, iscpfname, ihmmfname,
         #mean_dbns = np.mean(tmp_likelihoods, 0)
         #tmp_likelihoods *= (mean_gmms / mean_dbns)
         if VERBOSE:
-            print tmp_likelihoods
-            print tmp_likelihoods.shape
-        print map_states_to_phones
-        print dbn_phones_to_states
+            print(tmp_likelihoods)
+            print(tmp_likelihoods.shape)
+        print(map_states_to_phones)
+        print(dbn_phones_to_states)
         assert set(map_states_to_phones.values()) == set(dbn_phones_to_states.keys()), "Phones differ between the HMM and the DBN"
-        columns_remapping = [dbn_phones_to_states[map_states_to_phones[i]] for i in xrange(tmp_likelihoods.shape[1])]
+        columns_remapping = [dbn_phones_to_states[map_states_to_phones[i]] for i in range(tmp_likelihoods.shape[1])]
         if VERBOSE:
-            print columns_remapping
+            print(columns_remapping)
         likelihoods = (tmp_likelihoods[:, columns_remapping],
             map_file_to_start_end)
         #if VERBOSE:
@@ -714,7 +715,7 @@ def process(ofname, iscpfname, ihmmfname,
     else:
         likelihoods = (likelihoods_computer(all_mfcc), map_file_to_start_end)
 
-    print "computing viterbi paths"
+    print("computing viterbi paths")
     list_mlf_string = []
     with open(iscpfname) as iscpf:
         il = InnerLoop(likelihoods,
@@ -734,10 +735,10 @@ def process(ofname, iscpfname, ihmmfname,
 if __name__ == "__main__":
     if len(sys.argv) > 3:
         if '--help' in sys.argv:
-            print usage
+            print(usage)
             sys.exit(0)
         args = dict(enumerate(sys.argv))
-        options = filter(lambda (ind, x): '--' in x[0:2], enumerate(sys.argv))
+        options = [ind_x for ind_x in enumerate(sys.argv) if '--' in ind_x[1][0:2]]
         input_unibi_fname = None # my bigram LM
         input_lm_fname = None # HStats bigram LMs (either matrix of ARPA-MIT)
         input_wdnet_fname = None # HTK's wdnet (with bigram probas)
@@ -757,41 +758,41 @@ if __name__ == "__main__":
                 if option == '--ub':
                     input_unibi_fname = args[ind+1]
                     args.pop(ind+1)
-                    print "initialize the transitions between phones with the discounted bigram lm", input_unibi_fname 
+                    print("initialize the transitions between phones with the discounted bigram lm", input_unibi_fname) 
                 if option == '--b':
                     input_lm_fname = args[ind+1]
                     args.pop(ind+1)
-                    print "initialize the transitions between phones with the bigram lm", input_lm_fname
+                    print("initialize the transitions between phones with the bigram lm", input_lm_fname)
                 if option == '--w':
                     input_wdnet_fname = args[ind+1]
                     args.pop(ind+1)
-                    print "initialize the transitions between phones with the wordnet", input_wdnet_fname
-                    print "WILL IGNORE LANGUAGE MODELS!"
+                    print("initialize the transitions between phones with the wordnet", input_wdnet_fname)
+                    print("WILL IGNORE LANGUAGE MODELS!")
                 if option == '--d':
                     if not (ind+2) in args:
-                        print >> sys.stderr, "We need the DBN and the states/phones mapping"
-                        print >> sys.stderr, usage
+                        print("We need the DBN and the states/phones mapping", file=sys.stderr)
+                        print(usage, file=sys.stderr)
                         sys.exit(-1)
                     try:
                         from DBN_Gaussian_timit import DBN # not Gaussian if no GRBM
                     except:
-                        print >> sys.stderr, "experimental: TO BE LAUNCHED FROM THE 'DBN/' DIR"
+                        print("experimental: TO BE LAUNCHED FROM THE 'DBN/' DIR", file=sys.stderr)
                         sys.exit(-1)
                     dbn_fname = args[ind+1]
                     args.pop(ind+1)
-                    print "will use the following DBN to estimate states likelihoods", dbn_fname
+                    print("will use the following DBN to estimate states likelihoods", dbn_fname)
                     dbn_dicts_fname = args[ind+2]
                     args.pop(ind+2)
-                    print "and the following to_int / to_state dicts tuple", dbn_dicts_fname
+                    print("and the following to_int / to_state dicts tuple", dbn_dicts_fname)
         else:
-            print "initialize the transitions between phones uniformly"
-        output_fname = args.values()[1]
-        input_scp_fname = args.values()[2]
-        input_hmm_fname = args.values()[3]
+            print("initialize the transitions between phones uniformly")
+        output_fname = list(args.values())[1]
+        input_scp_fname = list(args.values())[2]
+        input_hmm_fname = list(args.values())[3]
         process(output_fname, input_scp_fname, 
                 input_hmm_fname, input_lm_fname, 
                 input_wdnet_fname, input_unibi_fname,
                 dbn_fname, dbn_dicts_fname)
     else:
-        print usage
+        print(usage)
         sys.exit(-1)

@@ -7,7 +7,7 @@ usage = """
     """
 
 if len(sys.argv) < 4:
-    print usage
+    print(usage)
     sys.exit(-1)
 
 folder = '.'
