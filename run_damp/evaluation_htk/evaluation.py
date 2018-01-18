@@ -28,7 +28,7 @@ trans = {
 'q': 'unk',
 'epi': 'unk',
 'pau': 'unk',
-'!BEGIN': 'unk',
+'!ENTER': 'unk',
 '!EXIT': 'unk',
 }
 
