@@ -12,6 +12,5 @@ for i in "${data_root}/"*.song; do
 		-H "${train_folder}/${hmm_name}/macros" \
 		-i "${i}/outtrans_${hmm_name}.mlf" \
 		-S "${i}/list.scp" \
-		-o C \
 		"${train_folder}/dict" "${train_folder}/phones"
 done

@@ -10,8 +10,8 @@ def convert(folder):
             fw = open(fullfname[:-4] + '.lab', 'w')
             for line in fr:
                 [s, e, p] = line.rstrip('\n').split()
-                s_ns = str(int(float(s)/16000 * 1000000000))
-                e_ns = str(int(float(e)/16000 * 1000000000))
+                s_ns = str(int(float(s)/16000 * 1000000))
+                e_ns = str(int(float(e)/16000 * 1000000))
                 fw.write(s_ns + ' ' + e_ns + ' ' + p + '\n')
             fr.close()
             fw.close()

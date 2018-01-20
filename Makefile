@@ -12,20 +12,20 @@ prepare_timit: wav_config src/mfcc_and_gammatones.py src/timit_to_htk_labels.py
 	@echo -e "*** preparing the dataset for phones recognition ***"
 	@echo -e "\n>>> produce MFCC and filterbanks from WAV files\n"
 	python src/mfcc_and_gammatones.py --no-sox --htk-mfcc --forcemfcext --filterbanks $(dataset)/train
-	python src/mfcc_and_gammatones.py --no-sox --htk-mfcc --forcemfcext --filterbanks $(dataset)/dev
+	#python src/mfcc_and_gammatones.py --no-sox --htk-mfcc --forcemfcext --filterbanks $(dataset)/dev
 	python src/mfcc_and_gammatones.py --no-sox --htk-mfcc --forcemfcext --filterbanks $(dataset)/test
 	@echo -e "\n>>> transform .phn files into .lab files (frames into nanoseconds)\n"
 	python src/timit_to_htk_labels.py $(dataset)/train
-	python src/timit_to_htk_labels.py $(dataset)/dev
+	#python src/timit_to_htk_labels.py $(dataset)/dev
 	python src/timit_to_htk_labels.py $(dataset)/test
 	@echo -e "\n>>> substitute phones (61 down to 39 if using timit_foldings.json) \n"
 	@echo -e ">>> Here we are just putting the !ENTER and !EXIT symbols\n"
 	python src/substitute_phones.py $(dataset)/train --sentences
-	python src/substitute_phones.py $(dataset)/dev --sentences
+	#python src/substitute_phones.py $(dataset)/dev --sentences
 	python src/substitute_phones.py $(dataset)/test --sentences
 	@echo -e "\n>>> creates (train|test).mlf, (train|test).scp listings and labels (dicts)\n"
 	python src/create_phonesMLF_list_labels.py $(dataset)/train
-	python src/create_phonesMLF_list_labels.py $(dataset)/dev
+	#python src/create_phonesMLF_list_labels.py $(dataset)/dev
 	python src/create_phonesMLF_list_labels.py $(dataset)/test
 
 
@@ -128,6 +128,7 @@ train_monophones_monogauss:
 	cp $(dataset_train_folder)/train.mlf $(TMP_TRAIN_FOLDER)/
 	cp $(dataset_train_folder)/train.scp $(TMP_TRAIN_FOLDER)/
 	python -c "import sys;print('( < ' + ' | '.join([line.strip('\n') for line in sys.stdin]) + ' > )')" < $(TMP_TRAIN_FOLDER)/monophones0 > $(TMP_TRAIN_FOLDER)/gram
+	#cp ./timit_gram $(TMP_TRAIN_FOLDER)/gram
 	HParse $(TMP_TRAIN_FOLDER)/gram $(TMP_TRAIN_FOLDER)/wdnet
 	#HBuild $(TMP_TRAIN_FOLDER)/monophones0 $(TMP_TRAIN_FOLDER)/wdnet
 	#cp proto.hmm $(TMP_TRAIN_FOLDER)/
